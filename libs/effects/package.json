@@ -1,0 +1,18 @@
+{
+    "name": "@ngxs-labs/effects",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Declarative side-effect handling for NGXS — react to action lifecycle events (dispatch, success, error) with a clean, class-based API.",
+    "keywords": [
+        "ngxs",
+        "effects",
+        "angular",
+        "state-management",
+        "side-effects"
+    ],
+    "peerDependencies": {
+        "@angular/core": ">=21.0.0",
+        "@ngxs/store": ">=21.0.0"
+    },
+    "sideEffects": false
+}
