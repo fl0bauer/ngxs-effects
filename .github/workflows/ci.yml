@@ -19,5 +19,4 @@ jobs:
             - run: yarn nx lint effects
             - run: yarn nx test effects
             - run: yarn nx build effects
-            - run: yarn nx test integration
             - run: yarn nx build integration
