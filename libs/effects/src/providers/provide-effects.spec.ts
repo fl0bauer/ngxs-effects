@@ -44,19 +44,16 @@ class TestState {
 @Injectable()
 class TestEffects {
     @Effect(IncrementAction, EffectOn.Dispatch)
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     onDispatch(_action: IncrementAction): void {
         /* noop */
     }
 
     @Effect(IncrementAction, EffectOn.Success)
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     onSuccess(_action: IncrementAction): void {
         /* noop */
     }
 
     @Effect(FailingAction, EffectOn.Error)
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     onError(_action: FailingAction, _error: Error): void {
         /* noop */
     }

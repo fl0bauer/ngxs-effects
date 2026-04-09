@@ -41,6 +41,17 @@ export default [
         },
     },
     {
+        files: ['**/*.spec.ts', '**/*.test.ts'],
+        rules: {
+            '@typescript-eslint/no-unused-vars': [
+                'error',
+                {
+                    argsIgnorePattern: '^_',
+                },
+            ],
+        },
+    },
+    {
         files: ['**/*.html'],
         // Override or add rules here
         rules: {},
