@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Action, Selector, State, StateContext } from '@ngxs/store';
 import { CounterStateModel } from './counter.model';
-import { FailingAction, Increment } from './counter.actions';
+import { FailingAction, Increment, SetCount } from './counter.actions';
 
 @State<CounterStateModel>({
     name: 'counter',
@@ -19,6 +19,12 @@ export class CounterState {
     @Action(Increment)
     increment(context: StateContext<CounterStateModel>): void {
         const count = context.getState().count + 1;
+        context.patchState({ count });
+    }
+
+    @Action(SetCount)
+    setCount(context: StateContext<CounterStateModel>, { payload }: SetCount): void {
+        const { count } = payload;
         context.patchState({ count });
     }
 
