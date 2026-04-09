@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { Injectable } from '@angular/core';
 import { Action, provideStore, State, StateContext, Store } from '@ngxs/store';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, Observable } from 'rxjs';
 import { provideEffects } from './provide-effects';
 import { Effect } from '../decorators/effect.decorator';
 import { EffectOn } from '../enums/effect-on.enum';
@@ -18,6 +18,10 @@ class DecrementAction {
 
 class FailingAction {
     static readonly type = '[Test] Failing';
+}
+
+class CancelableAction {
+    static readonly type = '[Test] Cancelable';
 }
 
 // --- Test State ---
@@ -46,6 +50,17 @@ class TestState {
     fail() {
         throw new Error('Test error');
     }
+
+    @Action(CancelableAction, { cancelUncompleted: true })
+    cancelable(): Observable<void> {
+        return new Observable<void>((subscriber) => {
+            const timeout = setTimeout(() => {
+                subscriber.next();
+                subscriber.complete();
+            }, 1000);
+            return () => clearTimeout(timeout);
+        });
+    }
 }
 
 // --- Test Effects ---
@@ -69,6 +84,16 @@ class TestEffects {
 
     @Effect([IncrementAction, DecrementAction], EffectOn.Dispatch)
     onCountChanged(_action: IncrementAction | DecrementAction): void {
+        /* noop */
+    }
+
+    @Effect(CancelableAction, EffectOn.Canceled)
+    onCanceled(_action: CancelableAction): void {
+        /* noop */
+    }
+
+    @Effect(IncrementAction, [EffectOn.Dispatch, EffectOn.Success])
+    onDispatchAndSuccess(_action: IncrementAction): void {
         /* noop */
     }
 }
@@ -121,6 +146,16 @@ describe('provideEffects', () => {
         );
     });
 
+    it('should call the decorated method on EffectOn.Canceled when the action is canceled', async () => {
+        const spy = jest.spyOn(effects, 'onCanceled');
+
+        // Dispatch twice rapidly — the first should be canceled by the second (cancelUncompleted: true).
+        store.dispatch(new CancelableAction());
+        await firstValueFrom(store.dispatch(new CancelableAction()));
+
+        expect(spy).toHaveBeenCalledWith(expect.any(CancelableAction));
+    });
+
     it('should clean up subscriptions when the injector is destroyed', async () => {
         const spy = jest.spyOn(effects, 'onSuccess');
         spy.mockClear();
@@ -157,6 +192,16 @@ describe('provideEffects', () => {
             await firstValueFrom(store.dispatch(new IncrementAction()));
             await firstValueFrom(store.dispatch(new DecrementAction()));
             expect(spy).toHaveBeenCalledTimes(2);
+        });
+    });
+
+    describe('multiple lifecycle events', () => {
+        it('should fire the handler once per lifecycle event for a single dispatch', async () => {
+            const spy = jest.spyOn(effects, 'onDispatchAndSuccess');
+            await firstValueFrom(store.dispatch(new IncrementAction()));
+            // Should fire twice: once on Dispatch, once on Success.
+            expect(spy).toHaveBeenCalledTimes(2);
+            expect(spy).toHaveBeenCalledWith(expect.any(IncrementAction));
         });
     });
 });
