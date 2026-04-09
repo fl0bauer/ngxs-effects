@@ -23,4 +23,9 @@ export class CounterEffects {
     onFailingActionError(action: FailingAction, error: Error): void {
         console.error('FailingAction error:', action, error.message);
     }
+
+    @Effect(Increment, [EffectOn.Dispatch, EffectOn.Success])
+    onIncrementDispatchedOrSucceeded(action: Increment): void {
+        console.log('Increment dispatched or succeeded', action);
+    }
 }
