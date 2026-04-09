@@ -44,18 +44,20 @@ class TestState {
 @Injectable()
 class TestEffects {
     @Effect(IncrementAction, EffectOn.Dispatch)
-    onDispatch(): void {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    onDispatch(_action: IncrementAction): void {
         /* noop */
     }
 
     @Effect(IncrementAction, EffectOn.Success)
-    onSuccess(): void {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    onSuccess(_action: IncrementAction): void {
         /* noop */
     }
 
     @Effect(FailingAction, EffectOn.Error)
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    onError(_error: unknown): void {
+    onError(_action: FailingAction, _error: Error): void {
         /* noop */
     }
 }
@@ -82,27 +84,30 @@ describe('provideEffects', () => {
         expect(result).toBeDefined();
     });
 
-    it('should call the decorated method on EffectOn.Success when the action completes successfully', async () => {
+    it('should call the decorated method on EffectOn.Success with the action instance as first param', async () => {
         const spy = jest.spyOn(effects, 'onSuccess');
         await firstValueFrom(store.dispatch(new IncrementAction()));
-        expect(spy).toHaveBeenCalled();
+        expect(spy).toHaveBeenCalledWith(expect.any(IncrementAction));
     });
 
-    it('should call the decorated method on EffectOn.Dispatch when the action is dispatched', async () => {
+    it('should call the decorated method on EffectOn.Dispatch with the action instance as first param', async () => {
         const spy = jest.spyOn(effects, 'onDispatch');
         await firstValueFrom(store.dispatch(new IncrementAction()));
-        expect(spy).toHaveBeenCalled();
+        expect(spy).toHaveBeenCalledWith(expect.any(IncrementAction));
     });
 
-    it('should call the decorated method on EffectOn.Error with the error when the action fails', async () => {
+    it('should call the decorated method on EffectOn.Error with the action as first param and error as second', async () => {
         const spy = jest.spyOn(effects, 'onError');
         try {
             await firstValueFrom(store.dispatch(new FailingAction()));
         } catch {
             // Expected — the action throws
         }
-        expect(spy).toHaveBeenCalledWith(expect.any(Error));
-        expect(spy).toHaveBeenCalledWith(expect.objectContaining({ message: 'Test error' }));
+        expect(spy).toHaveBeenCalledWith(expect.any(FailingAction), expect.any(Error));
+        expect(spy).toHaveBeenCalledWith(
+            expect.any(FailingAction),
+            expect.objectContaining({ message: 'Test error' }),
+        );
     });
 
     it('should clean up subscriptions when the injector is destroyed', async () => {

@@ -14,7 +14,8 @@ describe('Effect decorator', () => {
     it('should store metadata on the class prototype under EFFECTS_METADATA_KEY', () => {
         class TestEffects {
             @Effect(TestAction, EffectOn.Success)
-            onSuccess() {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            onSuccess(_action: TestAction) {
                 /* noop */
             }
         }
@@ -32,17 +33,20 @@ describe('Effect decorator', () => {
     it('should accumulate metadata for multiple @Effect() decorators on different methods', () => {
         class TestEffects {
             @Effect(TestAction, EffectOn.Success)
-            onSuccess() {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            onSuccess(_action: TestAction) {
                 /* noop */
             }
 
             @Effect(AnotherAction, EffectOn.Error)
-            onError() {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            onError(_action: AnotherAction, _error: Error) {
                 /* noop */
             }
 
             @Effect(TestAction, EffectOn.Dispatch)
-            onDispatch() {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            onDispatch(_action: TestAction) {
                 /* noop */
             }
         }
@@ -55,7 +59,8 @@ describe('Effect decorator', () => {
     it('should default `on` to EffectOn.Success when omitted', () => {
         class TestEffects {
             @Effect(TestAction)
-            onSuccess() {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            onSuccess(_action: TestAction) {
                 /* noop */
             }
         }
@@ -67,12 +72,14 @@ describe('Effect decorator', () => {
     it('should contain the correct action, on, and methodName', () => {
         class TestEffects {
             @Effect(TestAction, EffectOn.Dispatch)
-            handleDispatch() {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            handleDispatch(_action: TestAction) {
                 /* noop */
             }
 
             @Effect(AnotherAction, EffectOn.Error)
-            handleError() {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            handleError(_action: AnotherAction, _error: Error) {
                 /* noop */
             }
         }
