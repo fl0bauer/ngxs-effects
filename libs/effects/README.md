@@ -84,13 +84,35 @@ export const routes: Routes = [
 
 ### `@Effect(action, on?)`
 
-Method decorator that marks a method as an NGXS action side effect. The action type is inferred from the first argument
-and the decorated method receives a strongly-typed action instance as its first parameter.
+Method decorator that marks a method as an NGXS action side effect. The first argument accepts a **single action class**
+or an **array of action classes**. The action type is inferred from the first argument and the decorated method receives
+a strongly-typed action instance as its first parameter.
 
-| Parameter | Type         | Default            | Description                         |
-|-----------|--------------|--------------------|-------------------------------------|
-| `action`  | `ActionType` | —                  | The NGXS action class to listen to. |
-| `on`      | `EffectOn`   | `EffectOn.Success` | The lifecycle event to react to.    |
+| Parameter | Type                          | Default            | Description                                                   |
+|-----------|-------------------------------|--------------------|---------------------------------------------------------------|
+| `action`  | `ActionType \| ActionType[]`  | —                  | A single NGXS action class **or** an array of action classes. |
+| `on`      | `EffectOn`                    | `EffectOn.Success` | The lifecycle event to react to.                              |
+
+#### Single Action
+
+```ts
+@Effect(CreatePost, EffectOn.Success)
+onCreatePostSuccess(action: CreatePost) {
+    this.router.navigate(['/posts']);
+}
+```
+
+#### Array of Actions
+
+When an array is passed, the handler fires for **every** listed action. The action parameter is typed as
+the **union** of all action instance types — use `instanceof` to narrow if needed.
+
+```ts
+@Effect([CreatePost, UpdatePost], EffectOn.Success)
+onPostSaved(action: CreatePost | UpdatePost) {
+    this.router.navigate(['/posts']);
+}
+```
 
 #### Method Signatures
 
