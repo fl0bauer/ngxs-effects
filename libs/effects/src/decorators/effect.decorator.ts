@@ -12,6 +12,10 @@ import { EffectMetadata, EffectMethodDescriptor, ExtractActionType, EFFECTS_META
  * When an array is provided the method fires for every listed action and the
  * action parameter is typed as the **union** of all action instance types.
  *
+ * The second parameter accepts a **single `EffectOn` value** or an **array of
+ * `EffectOn` values**. When an array is provided the handler fires for **each**
+ * listed lifecycle event independently.
+ *
  * The decorated method always receives the **action instance** as its first
  * parameter (strongly typed). For `EffectOn.Error` the **error** is passed as
  * the second parameter.
@@ -19,6 +23,7 @@ import { EffectMetadata, EffectMethodDescriptor, ExtractActionType, EFFECTS_META
  * - `EffectOn.Dispatch` — `(action: T) => void` — fires when the action is dispatched (before the handler runs).
  * - `EffectOn.Success` (default) — `(action: T) => void` — fires after the handler completes successfully.
  * - `EffectOn.Error` — `(action: T, error: Error) => void` — fires when the handler throws.
+ * - `EffectOn.Canceled` — `(action: T) => void` — fires when the action is canceled.
  *
  * ## Usage
  *
@@ -37,6 +42,12 @@ import { EffectMetadata, EffectMethodDescriptor, ExtractActionType, EFFECTS_META
  *     @Effect([CreatePost, UpdatePost], EffectOn.Success)
  *     onPostSaved(action: CreatePost | UpdatePost) {
  *         this.router.navigate(['/posts']);
+ *     }
+ *
+ *     // Multiple lifecycle events
+ *     @Effect(CreatePost, [EffectOn.Success, EffectOn.Error])
+ *     onCreatePostSettled(action: CreatePost) {
+ *         console.log('CreatePost settled');
  *     }
  *
  *     @Effect(CreatePost, EffectOn.Error)
@@ -58,19 +69,19 @@ import { EffectMetadata, EffectMethodDescriptor, ExtractActionType, EFFECTS_META
  * ```
  *
  * @param action  A single NGXS action class **or** an array of action classes to listen to.
- * @param on      The lifecycle event to react to. Defaults to `EffectOn.Success`.
+ * @param on      The lifecycle event(s) to react to. Accepts a single `EffectOn` or an array. Defaults to `EffectOn.Success`.
  */
 export function Effect<T extends ActionDef>(
     action: T,
-    on?: EffectOn,
+    on?: EffectOn | EffectOn[],
 ): (target: object, propertyKey: string | symbol, descriptor: EffectMethodDescriptor<InstanceType<T>>) => void;
 export function Effect<T extends ActionDef[]>(
     actions: [...T],
-    on?: EffectOn,
+    on?: EffectOn | EffectOn[],
 ): (target: object, propertyKey: string | symbol, descriptor: EffectMethodDescriptor<ExtractActionType<T>>) => void;
-export function Effect(action: ActionType | ActionType[], on?: EffectOn): MethodDecorator;
+export function Effect(action: ActionType | ActionType[], on?: EffectOn | EffectOn[]): MethodDecorator;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function Effect(actionOrActions: any, on: EffectOn = EffectOn.Success) {
+export function Effect(actionOrActions: any, on: EffectOn | EffectOn[] = EffectOn.Success) {
     return (target: object, propertyKey: string | symbol) => {
         const prototype = target as Record<string, unknown>;
 
@@ -85,12 +96,13 @@ export function Effect(actionOrActions: any, on: EffectOn = EffectOn.Success) {
             });
         }
 
-        // Normalize to always store an array.
+        // Normalize to always store arrays.
         const actions: ActionType[] = Array.isArray(actionOrActions) ? actionOrActions : [actionOrActions];
+        const onArray: EffectOn[] = Array.isArray(on) ? on : [on];
 
         (prototype[EFFECTS_METADATA_KEY] as EffectMetadata[]).push({
             actions,
-            on,
+            on: onArray,
             methodName: String(propertyKey),
         });
     };

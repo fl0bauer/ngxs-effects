@@ -4,7 +4,7 @@ import { EffectOn } from '../enums/effect-on.enum';
 /** @internal Metadata stored per decorated method. */
 export interface EffectMetadata {
     actions: ActionType[];
-    on: EffectOn;
+    on: EffectOn[];
     methodName: string;
 }
 

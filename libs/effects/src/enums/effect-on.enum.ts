@@ -12,4 +12,7 @@ export enum EffectOn {
 
     /** Runs when the action handler throws an error. */
     Error = 'error',
+
+    /** Runs when the action is canceled (e.g. by a newer dispatch of the same action). */
+    Canceled = 'canceled',
 }

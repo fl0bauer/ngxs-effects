@@ -6,7 +6,7 @@ import {
     provideEnvironmentInitializer,
     Type,
 } from '@angular/core';
-import { ActionCompletion, Actions, ofActionDispatched, ofActionErrored, ofActionSuccessful } from '@ngxs/store';
+import { ActionCompletion, Actions, ofActionCanceled, ofActionDispatched, ofActionErrored, ofActionSuccessful } from '@ngxs/store';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EffectOn } from '../enums/effect-on.enum';
 import { EffectMetadata, EFFECTS_METADATA_KEY } from '../models/effect.model';
@@ -16,6 +16,7 @@ const OPERATOR_MAP = {
     [EffectOn.Dispatch]: ofActionDispatched,
     [EffectOn.Success]: ofActionSuccessful,
     [EffectOn.Error]: ofActionErrored,
+    [EffectOn.Canceled]: ofActionCanceled,
 } as const;
 
 /**
@@ -66,18 +67,20 @@ export function provideEffects(effectClasses: Type<any>[]): EnvironmentProviders
                 const metadata = (prototype[EFFECTS_METADATA_KEY] ?? []) as EffectMetadata[];
 
                 for (const { actions, on, methodName } of metadata) {
-                    const operator = OPERATOR_MAP[on];
+                    for (const lifecycle of on) {
+                        const operator = OPERATOR_MAP[lifecycle];
 
-                    actions$.pipe(operator(...actions), takeUntilDestroyed(destroyRef)).subscribe((result) => {
-                        // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-                        const method = (instance as Record<string, Function>)[methodName];
-                        if (on === EffectOn.Error) {
-                            const completion = result as ActionCompletion;
-                            method.call(instance, completion.action, completion.result.error);
-                        } else {
-                            method.call(instance, result);
-                        }
-                    });
+                        actions$.pipe(operator(...actions), takeUntilDestroyed(destroyRef)).subscribe((result) => {
+                            // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+                            const method = (instance as Record<string, Function>)[methodName];
+                            if (lifecycle === EffectOn.Error) {
+                                const completion = result as ActionCompletion;
+                                method.call(instance, completion.action, completion.result.error);
+                            } else {
+                                method.call(instance, result);
+                            }
+                        });
+                    }
                 }
             }),
         ),
