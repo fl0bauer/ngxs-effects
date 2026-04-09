@@ -1,6 +1,6 @@
-import { ActionType } from '@ngxs/store';
+import { ActionDef, ActionType } from '@ngxs/store';
 import { EffectOn } from '../enums/effect-on.enum';
-import { EffectMetadata, EFFECTS_METADATA_KEY } from '../models/effect.model';
+import { EffectMetadata, EffectMethodDescriptor, EFFECTS_METADATA_KEY } from '../models/effect.model';
 
 /**
  * Method decorator that marks a method as an NGXS action side effect.
@@ -8,9 +8,13 @@ import { EffectMetadata, EFFECTS_METADATA_KEY } from '../models/effect.model';
  * Works exactly like `@Action()` in NGXS state classes, but for side effects
  * that should **not** live in the state handler (navigation, toasts, logging, etc.).
  *
- * - `EffectOn.Success` (default) — the method receives the **action instance** after the handler completes.
- * - `EffectOn.Error` — the method receives the **error** that caused the failure.
- * - `EffectOn.Dispatch` — the method receives the **action instance** when it is dispatched (before the handler runs).
+ * The decorated method always receives the **action instance** as its first
+ * parameter (strongly typed). For `EffectOn.Error` the **error** is passed as
+ * the second parameter.
+ *
+ * - `EffectOn.Dispatch` — `(action: T) => void` — fires when the action is dispatched (before the handler runs).
+ * - `EffectOn.Success` (default) — `(action: T) => void` — fires after the handler completes successfully.
+ * - `EffectOn.Error` — `(action: T, error: Error) => void` — fires when the handler throws.
  *
  * ## Usage
  *
@@ -20,12 +24,12 @@ import { EffectMetadata, EFFECTS_METADATA_KEY } from '../models/effect.model';
  *     private readonly router = inject(Router);
  *
  *     @Effect(CreatePost, EffectOn.Success)
- *     onCreatePostSuccess() {
+ *     onCreatePostSuccess(action: CreatePost) {
  *         this.router.navigate(['/posts']);
  *     }
  *
  *     @Effect(CreatePost, EffectOn.Error)
- *     onCreatePostError(error: unknown) {
+ *     onCreatePostError(action: CreatePost, error: Error) {
  *         if (error instanceof HttpErrorResponse && error.status === 404) {
  *             this.router.navigate(['/404']);
  *         }
@@ -45,7 +49,13 @@ import { EffectMetadata, EFFECTS_METADATA_KEY } from '../models/effect.model';
  * @param action  The NGXS action class to listen to.
  * @param on      The lifecycle event to react to. Defaults to `EffectOn.Success`.
  */
-export function Effect(action: ActionType, on: EffectOn = EffectOn.Success): MethodDecorator {
+export function Effect<T extends ActionDef>(
+    action: T,
+    on?: EffectOn,
+): (target: object, propertyKey: string | symbol, descriptor: EffectMethodDescriptor<InstanceType<T>>) => void;
+export function Effect(action: ActionType, on?: EffectOn): MethodDecorator;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function Effect(action: any, on: EffectOn = EffectOn.Success) {
     return (target: object, propertyKey: string | symbol) => {
         const prototype = target as Record<string, unknown>;
 

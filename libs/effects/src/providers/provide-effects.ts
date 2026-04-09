@@ -73,7 +73,7 @@ export function provideEffects(effectClasses: Type<any>[]): EnvironmentProviders
                         const method = (instance as Record<string, Function>)[methodName];
                         if (on === EffectOn.Error) {
                             const completion = result as ActionCompletion;
-                            method.call(instance, completion.result.error);
+                            method.call(instance, completion.action, completion.result.error);
                         } else {
                             method.call(instance, result);
                         }
