@@ -65,10 +65,10 @@ export function provideEffects(effectClasses: Type<any>[]): EnvironmentProviders
                 const prototype = Object.getPrototypeOf(instance) as Record<string, unknown>;
                 const metadata = (prototype[EFFECTS_METADATA_KEY] ?? []) as EffectMetadata[];
 
-                for (const { action, on, methodName } of metadata) {
+                for (const { actions, on, methodName } of metadata) {
                     const operator = OPERATOR_MAP[on];
 
-                    actions$.pipe(operator(action), takeUntilDestroyed(destroyRef)).subscribe((result) => {
+                    actions$.pipe(operator(...actions), takeUntilDestroyed(destroyRef)).subscribe((result) => {
                         // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
                         const method = (instance as Record<string, Function>)[methodName];
                         if (on === EffectOn.Error) {

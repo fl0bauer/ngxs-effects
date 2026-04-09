@@ -1,12 +1,24 @@
-import { ActionType } from '@ngxs/store';
+import { ActionDef, ActionType } from '@ngxs/store';
 import { EffectOn } from '../enums/effect-on.enum';
 
 /** @internal Metadata stored per decorated method. */
 export interface EffectMetadata {
-    action: ActionType;
+    actions: ActionType[];
     on: EffectOn;
     methodName: string;
 }
+
+/**
+ * Extracts the instance (payload) type from an action class or array of action classes.
+ *
+ * - Single action: `InstanceType<T>`
+ * - Array of actions: union of all `InstanceType<T[number]>`
+ */
+export type ExtractActionType<T extends ActionDef | ActionDef[]> = T extends ActionDef[]
+    ? InstanceType<T[number]>
+    : T extends ActionDef
+      ? InstanceType<T>
+      : never;
 
 /**
  * Allowed method signatures for an `@Effect()`-decorated method.
