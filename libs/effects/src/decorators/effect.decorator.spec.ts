@@ -23,7 +23,7 @@ describe('Effect decorator', () => {
         expect(metadata).toBeDefined();
         expect(metadata.length).toBe(1);
         expect(metadata[0]).toEqual({
-            action: TestAction,
+            actions: [TestAction],
             on: EffectOn.Success,
             methodName: 'onSuccess',
         });
@@ -64,7 +64,7 @@ describe('Effect decorator', () => {
         expect(metadata[0].on).toBe(EffectOn.Success);
     });
 
-    it('should contain the correct action, on, and methodName', () => {
+    it('should contain the correct actions, on, and methodName', () => {
         class TestEffects {
             @Effect(TestAction, EffectOn.Dispatch)
             handleDispatch(_action: TestAction) {
@@ -80,15 +80,76 @@ describe('Effect decorator', () => {
         const metadata = (TestEffects.prototype as Record<string, unknown>)[EFFECTS_METADATA_KEY] as EffectMetadata[];
 
         expect(metadata[0]).toEqual({
-            action: TestAction,
+            actions: [TestAction],
             on: EffectOn.Dispatch,
             methodName: 'handleDispatch',
         });
 
         expect(metadata[1]).toEqual({
-            action: AnotherAction,
+            actions: [AnotherAction],
             on: EffectOn.Error,
             methodName: 'handleError',
+        });
+    });
+
+    describe('array of actions', () => {
+        it('should store an array of action classes when an array is passed', () => {
+            class TestEffects {
+                @Effect([TestAction, AnotherAction], EffectOn.Success)
+                onEither(_action: TestAction | AnotherAction) {
+                    /* noop */
+                }
+            }
+
+            const metadata = (TestEffects.prototype as Record<string, unknown>)[EFFECTS_METADATA_KEY] as EffectMetadata[];
+            expect(metadata).toBeDefined();
+            expect(metadata.length).toBe(1);
+            expect(metadata[0]).toEqual({
+                actions: [TestAction, AnotherAction],
+                on: EffectOn.Success,
+                methodName: 'onEither',
+            });
+        });
+
+        it('should default `on` to EffectOn.Success when an array is passed without a lifecycle', () => {
+            class TestEffects {
+                @Effect([TestAction, AnotherAction])
+                onEither(_action: TestAction | AnotherAction) {
+                    /* noop */
+                }
+            }
+
+            const metadata = (TestEffects.prototype as Record<string, unknown>)[EFFECTS_METADATA_KEY] as EffectMetadata[];
+            expect(metadata[0].on).toBe(EffectOn.Success);
+        });
+
+        it('should accumulate metadata when mixing single-action and array-action decorators', () => {
+            class TestEffects {
+                @Effect(TestAction, EffectOn.Dispatch)
+                onSingle(_action: TestAction) {
+                    /* noop */
+                }
+
+                @Effect([TestAction, AnotherAction], EffectOn.Success)
+                onMultiple(_action: TestAction | AnotherAction) {
+                    /* noop */
+                }
+            }
+
+            const metadata = (TestEffects.prototype as Record<string, unknown>)[EFFECTS_METADATA_KEY] as EffectMetadata[];
+            expect(metadata.length).toBe(2);
+
+            expect(metadata[0]).toEqual({
+                actions: [TestAction],
+                on: EffectOn.Dispatch,
+                methodName: 'onSingle',
+            });
+
+            expect(metadata[1]).toEqual({
+                actions: [TestAction, AnotherAction],
+                on: EffectOn.Success,
+                methodName: 'onMultiple',
+            });
         });
     });
 });

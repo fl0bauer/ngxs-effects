@@ -12,6 +12,10 @@ class IncrementAction {
     static readonly type = '[Test] Increment';
 }
 
+class DecrementAction {
+    static readonly type = '[Test] Decrement';
+}
+
 class FailingAction {
     static readonly type = '[Test] Failing';
 }
@@ -31,6 +35,11 @@ class TestState {
     @Action(IncrementAction)
     increment(ctx: StateContext<TestStateModel>) {
         ctx.patchState({ count: ctx.getState().count + 1 });
+    }
+
+    @Action(DecrementAction)
+    decrement(ctx: StateContext<TestStateModel>) {
+        ctx.patchState({ count: ctx.getState().count - 1 });
     }
 
     @Action(FailingAction)
@@ -55,6 +64,11 @@ class TestEffects {
 
     @Effect(FailingAction, EffectOn.Error)
     onError(_action: FailingAction, _error: Error): void {
+        /* noop */
+    }
+
+    @Effect([IncrementAction, DecrementAction], EffectOn.Dispatch)
+    onCountChanged(_action: IncrementAction | DecrementAction): void {
         /* noop */
     }
 }
@@ -123,5 +137,26 @@ describe('provideEffects', () => {
         await firstValueFrom(newStore.dispatch(new IncrementAction()));
 
         expect(spy).not.toHaveBeenCalled();
+    });
+
+    describe('array of actions', () => {
+        it('should call the handler when the first action in the array is dispatched', async () => {
+            const spy = jest.spyOn(effects, 'onCountChanged');
+            await firstValueFrom(store.dispatch(new IncrementAction()));
+            expect(spy).toHaveBeenCalledWith(expect.any(IncrementAction));
+        });
+
+        it('should call the handler when the second action in the array is dispatched', async () => {
+            const spy = jest.spyOn(effects, 'onCountChanged');
+            await firstValueFrom(store.dispatch(new DecrementAction()));
+            expect(spy).toHaveBeenCalledWith(expect.any(DecrementAction));
+        });
+
+        it('should call the handler for each action independently', async () => {
+            const spy = jest.spyOn(effects, 'onCountChanged');
+            await firstValueFrom(store.dispatch(new IncrementAction()));
+            await firstValueFrom(store.dispatch(new DecrementAction()));
+            expect(spy).toHaveBeenCalledTimes(2);
+        });
     });
 });
